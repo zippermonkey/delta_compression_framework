@@ -7,6 +7,7 @@
 #include "index/best_fit_index.h"
 #include "index/palantir_index.h"
 #include "index/super_feature_index.h"
+#include "index/roll_index.h"
 #include "storage/storage.h"
 #include <glog/logging.h>
 #include <iomanip>
@@ -149,7 +150,8 @@ DeltaCompression::DeltaCompression() {
       feature_index_map = {
           declare_feature_type(finesse, FinesseFeature, SuperFeatureIndex),
           declare_feature_type(odess, OdessFeature, SuperFeatureIndex),
-          declare_feature_type(n - transform, NTransformFeature,
+          declare_feature_type(roll, RollFeature, RollFeatureIndex),
+          declare_feature_type(n-transform, NTransformFeature,
                                SuperFeatureIndex),
           declare_feature_type(palantir, PalantirFeature, PalantirIndex),
           declare_feature_type(bestfit, OdessSubfeatures, BestFitIndex)};

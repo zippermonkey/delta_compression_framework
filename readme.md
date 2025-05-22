@@ -22,3 +22,9 @@ cd ..
 ```
 ./build/delta --config="config.toml"
 ```
+
+### 特征生成方法
+
+#### RollFeature
+
+特征生成方式和Odess相同，但是生成superfeature 的方式，使用在12个feature上滚动生成的方式。

@@ -80,4 +80,22 @@ public:
 private:
   OdessSubfeatures get_sub_features_;
 };
+
+class RollFeature : public FeatureCalculator {
+public:
+  RollFeature(const int sf_cnt = 12-default_odess_sf_subf+1,
+               const int sf_subf = default_odess_sf_subf,
+               const int mask = default_odess_mask)
+      : sf_cnt_(sf_cnt), sf_subf_(sf_subf), mask_(mask) {}
+
+  Feature operator()(std::shared_ptr<Chunk> chunk) override;
+
+private:
+  // grouped super features count
+  const int sf_cnt_;
+  // how much sub feature does a one super feature contain
+  const int sf_subf_;
+
+  const int mask_;
+};
 } // namespace Delta
