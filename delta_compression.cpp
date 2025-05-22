@@ -13,6 +13,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <lz4.h>
 namespace Delta {
 void DeltaCompression::AddFile(const std::string &file_name) {
   FileMeta file_meta;
@@ -35,9 +36,16 @@ void DeltaCompression::AddFile(const std::string &file_name) {
     }
 
     auto write_base_chunk = [this](const std::shared_ptr<Chunk> &chunk) {
+      // lz4 compress
+      int max_compressed_size = LZ4_compressBound(chunk->len());
+      std::vector<char> compressed(max_compressed_size);
+      int compressed_size = LZ4_compress_default(
+          reinterpret_cast<const char *>(chunk->buf()), compressed.data(),
+          chunk->len(), max_compressed_size);
+
       storage_->WriteBaseChunk(chunk);
       base_chunk_count_++;
-      total_size_compressed_ += chunk->len();
+      total_size_compressed_ += compressed_size;
     };
 
     auto write_delta_chunk = [this](const std::shared_ptr<Chunk> &chunk,
