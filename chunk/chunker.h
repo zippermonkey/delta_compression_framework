@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <memory>
+#include <cstdint>
 namespace Delta {
 class Chunk;
 class Chunker {

@@ -4,6 +4,7 @@
 #include <memory>
 #include <unordered_map>
 #include <vector>
+#include <cstdint>
 namespace Delta {
 class Chunk;
 class ChunkCache {

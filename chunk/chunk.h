@@ -5,6 +5,8 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <cstdint>
+
 namespace Delta {
 using chunk_id = uint32_t;
 class Chunk {

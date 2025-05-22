@@ -2,6 +2,8 @@
 #include <memory>
 #include <variant>
 #include <vector>
+#include <cstdint>
+
 namespace Delta {
 constexpr int default_finesse_sf_cnt = 3;
 // every super feature is grouped with 4 sub-features by default

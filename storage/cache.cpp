@@ -1,5 +1,6 @@
 #include "chunk/chunk.h"
 #include "storage/cache.h"
+#include <cstdint>
 namespace Delta {
 std::shared_ptr<Chunk> ChunkCache::get(uint32_t chunk_id) {
   if (!map_.count(chunk_id)) {
