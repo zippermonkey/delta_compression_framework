@@ -1,6 +1,7 @@
 #include "feature/features.h"
 #include "index/index.h"
 #include "index/super_feature_index.h"
+#include "filter/filter.h"
 #include <functional>
 #include <memory>
 #include <unordered_map>

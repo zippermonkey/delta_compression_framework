@@ -11,9 +11,9 @@
 #include <glog/logging.h>
 #include <iomanip>
 #include <iostream>
+#include <lz4.h>
 #include <string>
 #include <vector>
-#include <lz4.h>
 namespace Delta {
 void DeltaCompression::AddFile(const std::string &file_name) {
   FileMeta file_meta;
@@ -46,6 +46,7 @@ void DeltaCompression::AddFile(const std::string &file_name) {
       storage_->WriteBaseChunk(chunk);
       base_chunk_count_++;
       total_size_compressed_ += compressed_size;
+      filter_->add_hist_ratio(compressed_size * 1.0 / chunk->len());
     };
 
     auto write_delta_chunk = [this](const std::shared_ptr<Chunk> &chunk,
@@ -66,10 +67,16 @@ void DeltaCompression::AddFile(const std::string &file_name) {
       continue;
     }
 
-    auto delta_chunk =
-        storage_->GetDeltaEncodedChunk(chunk, base_chunk_id.value());
-    write_delta_chunk(chunk, delta_chunk, base_chunk_id.value());
-    file_meta.end_chunk_id = chunk->id();
+    if (filter_->IsDeltaCompressible(
+            storage_->GetChunkContent(base_chunk_id.value()), chunk)) {
+      auto delta_chunk =
+          storage_->GetDeltaEncodedChunk(chunk, base_chunk_id.value());
+      write_delta_chunk(chunk, delta_chunk, base_chunk_id.value());
+      file_meta.end_chunk_id = chunk->id();
+    } else {
+      index_->AddFeature(feature, chunk->id());
+      write_base_chunk(chunk);
+    }
   }
   file_meta_writer_.Write(file_meta);
 }
@@ -99,13 +106,9 @@ DeltaCompression::~DeltaCompression() {
 }
 
 #define declare_feature_type(NAME, FEATURE, INDEX)                             \
-  {                                                                            \
-#NAME, \
-[]() -> FeatureIndex { \
-  return {std::make_unique<FEATURE>(), \
-          std::make_unique<INDEX>()}; \
-}                                                                       \
-  }
+  {#NAME, []() -> FeatureIndex {                                               \
+     return {std::make_unique<FEATURE>(), std::make_unique<INDEX>()};          \
+   }}
 
 DeltaCompression::DeltaCompression() {
   auto config = Config::Instance().get();
@@ -146,7 +149,7 @@ DeltaCompression::DeltaCompression() {
       feature_index_map = {
           declare_feature_type(finesse, FinesseFeature, SuperFeatureIndex),
           declare_feature_type(odess, OdessFeature, SuperFeatureIndex),
-          declare_feature_type(n-transform, NTransformFeature,
+          declare_feature_type(n - transform, NTransformFeature,
                                SuperFeatureIndex),
           declare_feature_type(palantir, PalantirFeature, PalantirIndex),
           declare_feature_type(bestfit, OdessSubfeatures, BestFitIndex)};
@@ -158,6 +161,10 @@ DeltaCompression::DeltaCompression() {
   this->index_ = std::move(index_ptr);
 
   this->dedup_ = std::make_unique<Dedup>(dedup_index_path);
+
+  this->filter_ = std::make_unique<PalantirFilter>(
+      std::make_shared<FixedQueue<double>>(15));
+  // this->filter_ = std::make_unique<YesFilter>();
 
   auto storage = config->get_table("storage");
   auto encoder_name = *storage->get_as<std::string>("encoder");
