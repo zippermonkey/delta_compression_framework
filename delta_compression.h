@@ -4,6 +4,7 @@
 #include "index/index.h"
 #include "storage/file_meta.h"
 #include "storage/storage.h"
+#include "filter/filter.h"
 #include "dedup/dedup.h"
 #include <memory>
 #include <string>
@@ -24,6 +25,7 @@ protected:
   std::unique_ptr<Dedup> dedup_;
   std::unique_ptr<Storage> storage_;
   std::unique_ptr<FeatureCalculator> feature_;
+  std::unique_ptr<Filter> filter_;
 
   FileMetaWriter file_meta_writer_;
 

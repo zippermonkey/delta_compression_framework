@@ -70,9 +70,17 @@ void DeltaCompression::AddFile(const std::string &file_name) {
       continue;
     }
 
-    auto delta_chunk =
-        storage_->GetDeltaEncodedChunk(chunk, base_chunk_id.value());
-    write_delta_chunk(chunk, delta_chunk, base_chunk_id.value());
+    // find base chunk
+    if (filter_->IsDeltaCompressible(
+            storage_->GetChunkContent(base_chunk_id.value()), chunk)) {
+      auto delta_chunk =
+          storage_->GetDeltaEncodedChunk(chunk, base_chunk_id.value());
+      write_delta_chunk(chunk, delta_chunk, base_chunk_id.value());
+    } else {
+      index_->AddFeature(feature, chunk->id());
+      write_base_chunk(chunk);
+    }
+
     file_meta.end_chunk_id = chunk->id();
   }
   file_meta_writer_.Write(file_meta);
@@ -203,6 +211,7 @@ DeltaCompression::DeltaCompression() {
   auto [feature_ptr, index_ptr] = feature_index_map[feature_type]();
   this->feature_ = std::move(feature_ptr);
   this->index_ = std::move(index_ptr);
+  this->filter_ = std::make_unique<YesFilter>();
 
   this->dedup_ = std::make_unique<Dedup>(dedup_index_path);
 
