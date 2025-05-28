@@ -33,6 +33,7 @@ protected:
 
   size_t total_size_origin_ = 0;
   size_t total_size_compressed_ = 0;
+  size_t end2end_compressed_ = 0;
   size_t chunk_size_before_delta_ = 0;
   size_t chunk_size_after_delta_ = 0;
 };

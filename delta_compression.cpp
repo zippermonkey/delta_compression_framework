@@ -45,7 +45,8 @@ void DeltaCompression::AddFile(const std::string &file_name) {
 
       storage_->WriteBaseChunk(chunk);
       base_chunk_count_++;
-      total_size_compressed_ += compressed_size;
+      total_size_compressed_ += chunk->len();
+      end2end_compressed_ += compressed_size;
     };
 
     auto write_delta_chunk = [this](const std::shared_ptr<Chunk> &chunk,
@@ -56,6 +57,8 @@ void DeltaCompression::AddFile(const std::string &file_name) {
       delta_chunk_count_++;
       chunk_size_after_delta_ += delta_chunk->len();
       total_size_compressed_ += delta_chunk->len();
+      end2end_compressed_ += delta_chunk->len();
+
     };
 
     auto feature = (*feature_)(chunk);
@@ -96,6 +99,11 @@ DeltaCompression::~DeltaCompression() {
             << " after: " << total_size_compressed_ << std::endl;
   std::cout << "DCE (Delta Compression Efficiency): ";
   print_ratio(chunk_size_after_delta_, chunk_size_before_delta_);
+
+  std::cout << "End2End Compression Ratio: ";
+  print_ratio(total_size_origin_, end2end_compressed_);
+  std::cout << "before " << total_size_origin_
+            << " after(e2e): " << end2end_compressed_ << std::endl;
 }
 
 #define declare_feature_type(NAME, FEATURE, INDEX)                             \
