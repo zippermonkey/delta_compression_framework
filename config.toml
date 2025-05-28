@@ -10,7 +10,11 @@ file_meta_path = "./test_data/default.file"
 
 [feature]
 # one of finesse, odess, n-transform, palantir, bestfit, roll, hfmhv
-type = "hfmhv"
+type = "odess"
+
+[filter]
+# one of yes, hf
+type="yes"
 
 [chunker]
 # one of fast-cdc, rabin-cdc

@@ -211,7 +211,16 @@ DeltaCompression::DeltaCompression() {
   auto [feature_ptr, index_ptr] = feature_index_map[feature_type]();
   this->feature_ = std::move(feature_ptr);
   this->index_ = std::move(index_ptr);
-  this->filter_ = std::make_unique<YesFilter>();
+
+  auto filter = config->get_table("filter");
+  auto filter_type = *filter->get_as<std::string>("type");
+  if (filter_type == "yes")
+    this->filter_ = std::make_unique<YesFilter>();
+  else if (filter_type == "hf") 
+    this->filter_ = std::make_unique<HFilter>();
+  else {
+    LOG(FATAL) << "Unknown filter type " << filter_type;
+  }
 
   this->dedup_ = std::make_unique<Dedup>(dedup_index_path);
 
