@@ -6,6 +6,22 @@
 #include <cstdint>
 #include <queue>
 namespace Delta {
+std::vector<uint64_t> group(int sf_cnt, int sf_subf,
+              const std::vector<uint32_t> &sub_features) {
+  std::vector<uint64_t> super_features(sf_cnt, 0);
+
+  auto hash_buf = (const uint8_t *const)(sub_features.data());
+  for (int i = 0; i < sf_cnt; i++) {
+    uint64_t hash_value = 0;
+    auto this_hash_buf = hash_buf + i * sf_subf * sizeof(uint32_t);
+    for (int j = 0; j < sf_subf * sizeof(uint32_t); j++) {
+      hash_value = (hash_value << 1) + GEAR_TABLE[this_hash_buf[j]];
+    }
+    super_features[i] = hash_value;
+  }
+  return super_features;
+}
+
 Feature FinesseFeature::operator()(std::shared_ptr<Chunk> chunk) {
   int sub_chunk_length = chunk->len() / (sf_subf_ * sf_cnt_);
   uint8_t *content = chunk->buf();
@@ -73,16 +89,7 @@ Feature NTransformFeature::operator()(std::shared_ptr<Chunk> chunk) {
   }
 
   // group sub features into super features.
-  auto hash_buf = (const uint8_t *const)(sub_features.data());
-  for (int i = 0; i < sf_cnt_; i++) {
-    uint64_t hash_value = 0;
-    auto this_hash_buf = hash_buf + i * sf_subf_ * sizeof(uint32_t);
-    for (int j = 0; j < sf_subf_ * sizeof(uint32_t); j++) {
-      hash_value = (hash_value << 1) + GEAR_TABLE[this_hash_buf[j]];
-    }
-    super_features[i] = hash_value;
-  }
-  return super_features;
+  return group(sf_cnt_, sf_subf_, sub_features);
 }
 
 Feature OdessFeature::operator()(std::shared_ptr<Chunk> chunk) {
@@ -106,24 +113,13 @@ Feature OdessFeature::operator()(std::shared_ptr<Chunk> chunk) {
       }
     }
   }
-
-  // group sub features into super features.
-  auto hash_buf = (const uint8_t *const)(sub_features.data());
-  for (int i = 0; i < sf_cnt_; i++) {
-    uint64_t hash_value = 0;
-    auto this_hash_buf = hash_buf + i * sf_subf_ * sizeof(uint32_t);
-    for (int j = 0; j < sf_subf_ * sizeof(uint32_t); j++) {
-      hash_value = (hash_value << 1) + GEAR_TABLE[this_hash_buf[j]];
-    }
-    super_features[i] = hash_value;
-  }
-  return super_features;
+  return group(sf_cnt_, sf_subf_, sub_features);
 }
 
 Feature OdessSubfeatures::operator()(std::shared_ptr<Chunk> chunk) {
   int mask_ = default_odess_mask;
   int features_num = 12;
-  std::vector<uint64_t> sub_features(features_num, 0);
+  std::vector<uint32_t> sub_features(features_num, 0);
 
   int chunk_length = chunk->len();
   uint8_t *content = chunk->buf();
@@ -133,7 +129,7 @@ Feature OdessSubfeatures::operator()(std::shared_ptr<Chunk> chunk) {
     finger_print = (finger_print << 1) + GEAR_TABLE[content[i]];
     if ((finger_print & mask_) == 0) {
       for (int j = 0; j < features_num; j++) {
-        const uint64_t transform = (M[j] * finger_print + A[j]);
+        const uint32_t transform = (M[j] * finger_print + A[j]);
         // we need to guarantee that when sub_features[i] is not inited,
         // always set its value
         if (sub_features[j] >= transform || 0 == sub_features[j])
@@ -146,26 +142,12 @@ Feature OdessSubfeatures::operator()(std::shared_ptr<Chunk> chunk) {
 }
 
 Feature PalantirFeature::operator()(std::shared_ptr<Chunk> chunk) {
-  auto sub_features = std::get<std::vector<uint64_t>>(get_sub_features_(chunk));
+  auto sub_features = std::get<std::vector<uint32_t>>(get_sub_features_(chunk));
   std::vector<std::vector<uint64_t>> results;
 
-  auto group = [&](int sf_cnt, int sf_subf) -> std::vector<uint64_t> {
-    std::vector<uint64_t> super_features(sf_cnt, 0);
-    auto hash_buf = (const uint8_t *const)(sub_features.data());
-    for (int i = 0; i < sf_cnt; i++) {
-      uint64_t hash_value = 0;
-      auto this_hash_buf = hash_buf + i * sf_subf * sizeof(uint64_t);
-      for (int j = 4; j < sf_subf * sizeof(uint64_t); j++) {
-        hash_value = (hash_value << 1) + GEAR_TABLE[this_hash_buf[j]];
-      }
-      super_features[i] = hash_value;
-    }
-    return super_features;
-  };
-
-  results.push_back(group(3, 4));
-  results.push_back(group(4, 3));
-  results.push_back(group(6, 2));
+  results.push_back(group(3, 4,sub_features));
+  results.push_back(group(4, 3,sub_features));
+  results.push_back(group(6, 2,sub_features));
   return results;
 }
 } // namespace Delta

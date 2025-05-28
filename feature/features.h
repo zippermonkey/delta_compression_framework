@@ -14,8 +14,12 @@ constexpr int default_odess_sf_subf = 4;
 constexpr uint64_t default_odess_mask = (1 << 7) - 1;
 class Chunk;
 using Feature = std::variant<std::vector<std::vector<uint64_t>>,
-                             std::vector<uint64_t>
+                             std::vector<uint64_t>,
+                             std::vector<uint32_t>
                              >;
+
+std::vector<uint64_t> group(int sf_cnt, int sf_subf,
+              const std::vector<uint32_t> &sub_features);
 
 class FeatureCalculator {
 public:
