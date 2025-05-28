@@ -185,6 +185,11 @@ DeltaCompression::DeltaCompression() {
              return {create_feature<OdessSubfeatures>(),
                      create_index<BestFitIndex>()};
            }},
+           {"roll",
+           []() -> FeatureIndex {
+             return {create_feature<RollFeature>(),
+                     create_index<SuperFeatureIndex>((12 - default_odess_sf_subf) / default_roll_stride + 1)};
+           }},
       };
 
   if (!feature_index_map.count(feature_type))
