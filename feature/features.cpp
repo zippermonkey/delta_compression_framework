@@ -172,4 +172,15 @@ Feature RollFeature::operator()(std::shared_ptr<Chunk> chunk) {
   auto sub_features = std::get<std::vector<uint32_t>>(get_sub_features_(chunk));
   return rollgroup(sf_subf_, stride_, sub_features);
 }
+
+Feature HFMHVFeature::operator()(std::shared_ptr<Chunk> chunk) {
+  std::vector<std::vector<uint64_t>> results;
+  auto odess_feature = std::get<std::vector<uint32_t>>(odess_feature_(chunk));
+  auto roll_feature = rollgroup(4, 1, odess_feature);
+
+  results.push_back(group(3,4,odess_feature));
+  results.push_back(roll_feature);
+
+  return results;
+}
 } // namespace Delta

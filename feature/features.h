@@ -102,4 +102,15 @@ private:
   const int sf_subf_;
   const int stride_;
 };
+
+class HFMHVFeature : public FeatureCalculator {
+public:
+  HFMHVFeature() {}
+  Feature operator()(std::shared_ptr<Chunk> chunk) override;
+
+private:
+  OdessSubfeatures odess_feature_;
+  RollFeature roll_feature_;
+
+};
 } // namespace Delta
