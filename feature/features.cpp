@@ -42,35 +42,35 @@ std::vector<uint64_t> rollgroup(int sf_subf, int stride,
 Feature FinesseFeature::operator()(std::shared_ptr<Chunk> chunk) {
   int sub_chunk_length = chunk->len() / (sf_subf_ * sf_cnt_);
   uint8_t *content = chunk->buf();
-  std::vector<uint64_t> sub_features(sf_cnt_ * sf_subf_, 0);
+  std::vector<uint32_t> sub_features(sf_cnt_ * sf_subf_, 0);
   std::vector<uint64_t> super_features(sf_cnt_, 0);
 
   // calculate sub features.
   for (int i = 0; i < sub_features.size(); i++) {
-    rabin_t rabin_ctx;
-    rabin_init(&rabin_ctx);
+    uint64_t finger_print = 0;
     for (int j = 0; j < sub_chunk_length; j++) {
-      rabin_append(&rabin_ctx, content[j]);
-      sub_features[i] = std::max(rabin_ctx.digest, sub_features[i]);
+      finger_print = (finger_print << 1) + GEAR_TABLE[content[i]];
+      if (0 == sub_features[i] || finger_print >= sub_features[i])
+        sub_features[i] = finger_print;
     }
     content += sub_chunk_length;
   }
 
   // group the sub features into super features.
-  for (int i = 0; i < sub_features.size(); i += sf_subf_) {
-    std::sort(sub_features.begin() + i, sub_features.begin() + i + sf_subf_);
+  for (int i = 0; i < sub_features.size(); i += sf_cnt_) {
+    std::sort(sub_features.begin() + i, sub_features.begin() + i + sf_cnt_);
   }
+
   for (int i = 0; i < sf_cnt_; i++) {
-    rabin_t rabin_ctx;
-    rabin_init(&rabin_ctx);
-    for (int j = 0; j < sf_subf_; j++) {
-      auto sub_feature = sub_features[sf_subf_ * i + j];
-      auto data_ptr = (uint8_t *)&sub_feature;
-      for (int k = 0; k < 8; k++) {
-        rabin_append(&rabin_ctx, data_ptr[k]);
+    uint64_t finger_print = 0;
+    for (int j = 0; j < sf_subf_; ++j) {
+      auto feature = sub_features[j * sf_cnt_ + i];
+      auto data_ptr = (uint8_t *)&feature;
+      for (int k = 0; k < 4; ++k) {
+        finger_print = (finger_print << 1) + GEAR_TABLE[data_ptr[k]];
       }
     }
-    super_features[i] = rabin_ctx.digest;
+    super_features[i] = finger_print;
   }
   return super_features;
 }
