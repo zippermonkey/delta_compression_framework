@@ -7,6 +7,7 @@
 #include "index/best_fit_index.h"
 #include "index/palantir_index.h"
 #include "index/super_feature_index.h"
+#include "index/hfmhv_index.h"
 #include "storage/storage.h"
 #include <glog/logging.h>
 #include <iomanip>
@@ -189,6 +190,11 @@ DeltaCompression::DeltaCompression() {
            []() -> FeatureIndex {
              return {create_feature<RollFeature>(),
                      create_index<SuperFeatureIndex>((12 - default_odess_sf_subf) / default_roll_stride + 1)};
+           }},
+           {"hfmhv",
+           []() -> FeatureIndex {
+             return {create_feature<HFMHVFeature>(),
+                     create_index<HFMHVIndex>()};
            }},
       };
 
