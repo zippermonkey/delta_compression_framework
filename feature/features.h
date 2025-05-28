@@ -11,6 +11,7 @@ constexpr int default_finesse_sf_subf = 4;
 
 constexpr int default_odess_sf_cnt = 3;
 constexpr int default_odess_sf_subf = 4;
+constexpr int default_roll_stride = 1;
 constexpr uint64_t default_odess_mask = (1 << 7) - 1;
 class Chunk;
 using Feature = std::variant<std::vector<std::vector<uint64_t>>,
@@ -20,6 +21,10 @@ using Feature = std::variant<std::vector<std::vector<uint64_t>>,
 
 std::vector<uint64_t> group(int sf_cnt, int sf_subf,
               const std::vector<uint32_t> &sub_features);
+
+// roll group feature as super feature
+std::vector<uint64_t> rollgroup(int sf_subf, int stride,
+                                const std::vector<uint32_t> &sub_features);
 
 class FeatureCalculator {
 public:
@@ -83,5 +88,18 @@ public:
   Feature operator()(std::shared_ptr<Chunk> chunk);
 private:
   OdessSubfeatures get_sub_features_;
+};
+
+class RollFeature : public FeatureCalculator {
+public:
+  RollFeature(const int sf_subf = default_odess_sf_subf,
+              const int stride = default_roll_stride)
+      : sf_subf_(sf_subf), stride_(stride) {}
+  Feature operator()(std::shared_ptr<Chunk> chunk) override;
+
+private:
+  OdessSubfeatures get_sub_features_;
+  const int sf_subf_;
+  const int stride_;
 };
 } // namespace Delta

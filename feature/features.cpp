@@ -22,6 +22,23 @@ std::vector<uint64_t> group(int sf_cnt, int sf_subf,
   return super_features;
 }
 
+std::vector<uint64_t> rollgroup(int sf_subf, int stride,
+                                const std::vector<uint32_t> &sub_features) {
+  auto sub_features_num = sub_features.size();
+  auto sf_cnt = (sub_features_num - sf_subf) / stride + 1;
+  std::vector<uint64_t> super_features(sf_cnt, 0);
+  auto hash_buf = (const uint8_t *const)(sub_features.data());
+  for (int i = 0; i < sf_cnt; i++) {
+    uint64_t hash_value = 0;
+    auto this_hash_buf = hash_buf + i * (sf_subf + stride) * sizeof(uint32_t);
+    for (int j = 0; j < sf_subf * sizeof(uint32_t); j++) {
+      hash_value = (hash_value << 1) + GEAR_TABLE[this_hash_buf[j]];
+    }
+    super_features[i] = hash_value;
+  }
+  return super_features;
+}
+
 Feature FinesseFeature::operator()(std::shared_ptr<Chunk> chunk) {
   int sub_chunk_length = chunk->len() / (sf_subf_ * sf_cnt_);
   uint8_t *content = chunk->buf();
@@ -149,5 +166,10 @@ Feature PalantirFeature::operator()(std::shared_ptr<Chunk> chunk) {
   results.push_back(group(4, 3,sub_features));
   results.push_back(group(6, 2,sub_features));
   return results;
+}
+
+Feature RollFeature::operator()(std::shared_ptr<Chunk> chunk) {
+  auto sub_features = std::get<std::vector<uint32_t>>(get_sub_features_(chunk));
+  return rollgroup(sf_subf_, stride_, sub_features);
 }
 } // namespace Delta
