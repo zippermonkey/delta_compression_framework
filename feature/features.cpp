@@ -30,7 +30,7 @@ std::vector<uint64_t> rollgroup(int sf_subf, int stride,
   auto hash_buf = (const uint8_t *const)(sub_features.data());
   for (int i = 0; i < sf_cnt; i++) {
     uint64_t hash_value = 0;
-    auto this_hash_buf = hash_buf + i * (sf_subf + stride) * sizeof(uint32_t);
+    auto this_hash_buf = hash_buf + i * (stride) * sizeof(uint32_t);
     for (int j = 0; j < sf_subf * sizeof(uint32_t); j++) {
       hash_value = (hash_value << 1) + GEAR_TABLE[this_hash_buf[j]];
     }
