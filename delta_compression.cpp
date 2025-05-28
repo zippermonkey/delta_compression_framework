@@ -106,14 +106,23 @@ DeltaCompression::~DeltaCompression() {
             << " after(e2e): " << end2end_compressed_ << std::endl;
 }
 
-#define declare_feature_type(NAME, FEATURE, INDEX)                             \
-  {                                                                            \
-#NAME, \
-[]() -> FeatureIndex { \
-  return {std::make_unique<FEATURE>(), \
-          std::make_unique<INDEX>()}; \
-}                                                                       \
-  }
+using FeatureIndex =
+      std::pair<std::unique_ptr<FeatureCalculator>, std::unique_ptr<Index>>;
+// 模板函数，用于创建 Feature
+template <typename FeatureType, typename... Args>
+std::unique_ptr<FeatureCalculator> create_feature(Args&&... args) {
+  return std::make_unique<FeatureType>(std::forward<Args>(args)...);
+}
+
+// 模板函数，用于创建 Index
+template <typename IndexType, typename... Args>
+std::unique_ptr<Index> create_index(Args&&... args) {
+  return std::make_unique<IndexType>(std::forward<Args>(args)...);
+}
+
+// 工厂函数
+using FeatureFactory = std::function<std::unique_ptr<FeatureCalculator>(void)>;
+using IndexFactory = std::function<std::unique_ptr<Index>(void)>;
 
 DeltaCompression::DeltaCompression() {
   auto config = Config::Instance().get();
@@ -148,16 +157,35 @@ DeltaCompression::DeltaCompression() {
 
   auto feature = config->get_table("feature");
   auto feature_type = *feature->get_as<std::string>("type");
-  using FeatureIndex =
-      std::pair<std::unique_ptr<FeatureCalculator>, std::unique_ptr<Index>>;
+
   std::unordered_map<std::string, std::function<FeatureIndex()>>
       feature_index_map = {
-          declare_feature_type(finesse, FinesseFeature, SuperFeatureIndex),
-          declare_feature_type(odess, OdessFeature, SuperFeatureIndex),
-          declare_feature_type(n-transform, NTransformFeature,
-                               SuperFeatureIndex),
-          declare_feature_type(palantir, PalantirFeature, PalantirIndex),
-          declare_feature_type(bestfit, OdessSubfeatures, BestFitIndex)};
+          {"finesse",
+           []() -> FeatureIndex {
+             return {create_feature<FinesseFeature>(),
+                     create_index<SuperFeatureIndex>()};
+           }},
+          {"odess",
+           []() -> FeatureIndex {
+             return {create_feature<OdessFeature>(),
+                     create_index<SuperFeatureIndex>()};
+           }},
+          {"n-transform",
+           []() -> FeatureIndex {
+             return {create_feature<NTransformFeature>(),
+                     create_index<SuperFeatureIndex>()};
+           }},
+          {"palantir",
+           []() -> FeatureIndex {
+             return {create_feature<PalantirFeature>(),
+                     create_index<PalantirIndex>()};
+           }},
+          {"bestfit",
+           []() -> FeatureIndex {
+             return {create_feature<OdessSubfeatures>(),
+                     create_index<BestFitIndex>()};
+           }},
+      };
 
   if (!feature_index_map.count(feature_type))
     LOG(FATAL) << "Unknown feature type " << feature_type;
