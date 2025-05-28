@@ -27,5 +27,6 @@ public:
 
 private:
   std::vector<SuperFeatureIndex*> levels_;
+  bool IsDeltaCompressible(std::optional<Delta::chunk_id> chunk);
 };
 } // namespace Delta
