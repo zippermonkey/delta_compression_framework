@@ -13,8 +13,8 @@ file_meta_path = "./test_data/default.file"
 type = "odess"
 
 [filter]
-# one of yes, hf
-type="yes"
+# one of yes, hf, lz4
+type="lz4"
 
 [chunker]
 # one of fast-cdc, rabin-cdc

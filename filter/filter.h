@@ -23,4 +23,11 @@ class HFilter : public Filter {
 
 };
 
+class LZ4Filter : public Filter {
+  bool IsDeltaCompressible(std::shared_ptr<Chunk> base_chunk,
+                           std::shared_ptr<Chunk> chunk) override;
+
+};
+
+
 } // namespace Delta

@@ -1,5 +1,6 @@
 #include "filter/filter.h"
 #include <vector>
+#include "lz4.h"
 namespace Delta {
 bool HFilter::IsDeltaCompressible(std::shared_ptr<Chunk> base_chunk,
                                   std::shared_ptr<Chunk> chunk) {
@@ -31,4 +32,18 @@ bool HFilter::IsDeltaCompressible(std::shared_ptr<Chunk> base_chunk,
 
   return distance < 0.5;
 }
+
+bool LZ4Filter::IsDeltaCompressible(std::shared_ptr<Chunk> base_chunk,
+                                    std::shared_ptr<Chunk> chunk) {
+  int max_compressed_size = 0;
+  
+  max_compressed_size = LZ4_compressBound(base_chunk->len());
+  std::vector<char> compressed(max_compressed_size);
+  int compressed_size = LZ4_compress_default(
+      reinterpret_cast<const char *>(base_chunk->buf()), compressed.data(),
+      base_chunk->len(), max_compressed_size);
+  
+  return (1.0 * compressed_size / base_chunk->len()) > 0.05;
+  }
+
 } // namespace Delta

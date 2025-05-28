@@ -218,6 +218,8 @@ DeltaCompression::DeltaCompression() {
     this->filter_ = std::make_unique<YesFilter>();
   else if (filter_type == "hf") 
     this->filter_ = std::make_unique<HFilter>();
+  else if (filter_type == "lz4") 
+    this->filter_ = std::make_unique<LZ4Filter>();
   else {
     LOG(FATAL) << "Unknown filter type " << filter_type;
   }
