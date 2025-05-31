@@ -12,7 +12,7 @@ class Chunk;
 class HFMHVIndex : public Index {
 public:
   HFMHVIndex() {
-    levels_.push_back(new SuperFeatureIndex(3));
+    levels_.push_back(new SuperFeatureIndex(default_odess_sf_cnt));
     levels_.push_back(new SuperFeatureIndex((12 - default_odess_sf_subf) / default_roll_stride + 1));
   }
   ~HFMHVIndex() {
